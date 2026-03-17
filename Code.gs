@@ -2,34 +2,136 @@
 
 const DATA_INDEX = 0; // Index 0 (First tab)
 const UI_INDEX = 1; // Index 1 (second tab)
-
-// Column Mapping for DATA SHEET
-const COL_exDe = 7;     // Column
-const COL_exEn = 6;     // Column
-const COL_LAST_REV = 13; // Column 
-const COL_COUNT = 14;    // Column 
-const COL_OFFSET = 15;   // Column 
-const COL_PRIO = 16;     // Column 
+const DATA_INDEX_2 = 2; // for the 2nd target-language to learn 
 
 const ss = SpreadsheetApp.getActiveSpreadsheet();
 const sheets = ss.getSheets();
 const dataSheet = sheets[DATA_INDEX];
 const uiSheet = sheets[UI_INDEX];
 
+
+/** Column Mapping for DATA sheet */
+const COL_de = 2;
+const COL_exDe = 6;     // Column
+const COL_exEn = 7;     // Column
+const COL_LAST_REV = 13; // Column 
+const COL_COUNT = 14;    // Column 
+const COL_OFFSET = 15;   // Column 
+const COL_PRIO = 16;     // Column 
+const COL_type = 4; // Col D
+
 /** on the UI sheet */
 const cardNumberCell = "D2";
-const toggleRow = 16;
-const toggleCol = 1;
-const shuffleSwitchRow = 12;
-const genderSwitchRow = 14;
+const currentRow = uiSheet.getRange(cardNumberCell).getValue(); 
+const wordSentenceTogglRow = 16;
+const wordSentenceTogglCol = 1;
+const shuffleSwitchRow = 14;
+const genderSwitchRow = 16;
+const genderSwitchCol = 3;
 const exampleEnSwitchRow = 16;
 const revealSwitchRow = 18;
-const hintRow = 12;
+const hintRow = 14;
 const hintCol = 3;
 
+const dailyCounterCell = "B14";
+const dailyCountRange = uiSheet.getRange(dailyCounterCell);
+const dailyCount = uiSheet.getRange(dailyCounterCell).getValue(); 
+
 /**
- * Picks a new card based on the highest priority scores.
+  Picks a new card based on the highest priority scores.
+ New function
  */
+// function shuffleResult() {
+//   const lastRow = dataSheet.getLastRow();
+//   if (lastRow < 2) {
+//     SpreadsheetApp.getUi().alert("Data sheet is empty!");
+//     return;
+//   }
+
+//   // --- 1. SETTINGS & LIMIT CHECK ---
+//   const limitEnabled = uiSheet.getRange("A14").getValue(); // Your limit toggle
+//   const maxLimit = uiSheet.getRange("B14").getValue() || 5; // Your daily limit
+  
+//   // Read current stats from J2:P2 (Count, Countdown, VIP 1-5)
+//   const statsRange = uiSheet.getRange("J2:P2");
+//   const stats = statsRange.getValues()[0];
+  
+//   let currentCount = stats[0] || 0;
+//   let countdown = stats[1] || 0;
+//   const vipPool = stats.slice(2); // L2 through P2
+
+//   if (limitEnabled && currentCount >= maxLimit) {
+//     SpreadsheetApp.getUi().alert("🎉 Limit Erreicht! \n\nYou've finished your " + maxLimit + " reviews. Great job!");
+//     uiSheet.getRange("J2").setValue(0); // Reset counter for next time
+//     return;
+//   }
+
+//   // --- 2. MODE DETECTION ---
+//   const isWType = uiSheet.getRange("A16").getValue();
+//   const targetType = (isWType === true || isWType === "TRUE") ? "word" : "sentence";
+//   const lastType = uiSheet.getRange("Q2").getValue(); // Internal tracker for mode switches
+
+//   let winnerRow;
+
+//   // --- 3. SORTING vs. CACHING LOGIC ---
+//   // We refresh the pool if: countdown is 0 OR the user switched mode (word <-> sentence)
+//   if (countdown <= 0 || targetType !== lastType) {
+//     console.log("REFRESHING POOL: Filtering and sorting data...");
+    
+//     const priorities = dataSheet.getRange(2, COL_PRIO, lastRow - 1).getValues();
+//     const types = dataSheet.getRange(2, COL_type, lastRow - 1).getValues();
+
+//     let list = [];
+//     for (let i = 0; i < priorities.length; i++) {
+//       let pValue = priorities[i][0];
+//       let typeValue = types[i][0];
+//       if (pValue !== "" && !isNaN(pValue) && typeValue === targetType) {
+//         list.push({ row: i + 2, val: pValue });
+//       }
+//     }
+
+//     if (list.length === 0) {
+//       SpreadsheetApp.getUi().alert("No matches for '" + targetType + "' found in Data sheet.");
+//       return;
+//     }
+
+//     // Sort Descending (Highest Priority first)
+//     list.sort((a, b) => b.val - a.val);
+    
+//     // Take Top 5 and pad with the first one if the list is smaller than 5
+//     const top5 = list.slice(0, 5).map(item => item.row);
+//     while (top5.length < 5) { top5.push(top5[0]); }
+
+//     winnerRow = top5[Math.floor(Math.random() * top5.length)];
+    
+//     // Update memory variables
+//     currentCount++;
+//     countdown = 10;
+    
+//     // Batch update the stats in J2:Q2
+//     uiSheet.getRange("J2:Q2").setValues([[currentCount, countdown, top5[0], top5[1], top5[2], top5[3], top5[4], targetType]]);
+//   } 
+//   else {
+//     console.log("USING CACHE: Picking from VIP pool...");
+//     winnerRow = vipPool[Math.floor(Math.random() * vipPool.length)];
+    
+//     currentCount++;
+//     countdown--;
+
+//     // Update the updated Count and Countdown
+//     uiSheet.getRange("J2:K2").setValues([[currentCount, countdown]]);
+//   }
+
+//   // --- 4. UI CLEANUP ---
+//   uiSheet.getRange("D2:G2").setValues([[winnerRow, false, false, false]]);
+//   uiSheet.getRangeList(["E2", "H2", "I2"]).clearContent();
+
+//   console.log("SUCCESS: Row " + winnerRow + " selected. Count: " + currentCount);
+//   switchOff();
+// }
+
+
+// Old function
 function shuffleResult() {
   const lastRow = dataSheet.getLastRow();
   if (lastRow < 2) {
@@ -39,19 +141,19 @@ function shuffleResult() {
 
   // --- NEW: Get the Filter Value from UI (Cell A16) for word / sentence toggle---
   const isWType = uiSheet.getRange("A16").getValue(); // TRUE or False
-  const targetType = (isWType === true || isWType === "TRUE") ? "w" : "s"; // Decide which category to look for using a shortcut called a "Ternary Operator":
-  // If isWType is true, targetType becomes "w" (word). If false, it becomes "s" (sentence).
+  const targetType = (isWType === true || isWType === "TRUE") ? "word" : "sentence"; // Decide which category to look for using a shortcut called a "Ternary Operator":
+  // If isWType is true, targetType becomes "word" (word). If false, it becomes "sentence" (sentence).
   console.log("DEBUG: Checkbox is " + isWType + " | Target Type is: " + targetType);
 
   // Get Priority values from Column H (8)
   const priorities = dataSheet.getRange(2, COL_PRIO, lastRow - 1).getValues();
-  const types = dataSheet.getRange(2, 4, lastRow - 1).getValues(); // column D
+  const types = dataSheet.getRange(2, COL_type, lastRow - 1).getValues(); // column D
 
   let list = []; // Get an empty basket ready to hold the winners
   for (let i = 0; i < priorities.length; i++) { // Start walking down the list, checking one item at a time
     let pValue = priorities[i][0]; // Grab the priority number for the item we are looking at right now
-    let typeValue = types[i][0].toString().trim().toLowerCase();; // Grab the name, clean up any messy spaces, and make it all small letters
-    // --- NEW: Check if it's a number AND matches your "w" vs "s" filter ---
+    let typeValue = types[i][0]; // Grab the name, clean up any messy spaces, and make it all small letters
+    // --- NEW: Check if it's a number AND matches your "word" vs "sentence" filter ---
     if (pValue !== "" && !isNaN(pValue) && typeValue === targetType) { // The Security Guard: Is it not empty? Is it a real number? And is it the specific type we want?
       list.push({ row: i + 2, val: pValue }); // If it passed the test, save its row number and score into our basket!
     }
@@ -63,7 +165,7 @@ function shuffleResult() {
       "ERROR: No matches found.\n\n" +
       "1. Script is looking for: '" + targetType + "'\n" +
       "2. First row in Data (Col I) actually has: '" + sampleType + "'\n" +
-      "3. Ensure Column I contains exactly 'w' or 's'."
+      "3. Ensure Column I contains exactly 'word' or 'sentence'."
     );
     return;
   }
@@ -106,6 +208,8 @@ b - a = Descending (Biggest to Smallest) -> The reverse
   switchOff();
 }
 
+//const lastRow = dataSheet.getLastRow();
+ // console.log("last row:", lastRow);
 
 /**
  * Reveals the German sentence on the UI.
@@ -118,7 +222,6 @@ function revealAnswer() {
  * Updates the data and triggers the next shuffle.
  */
 function updateValue(points) {
-  const currentRow = uiSheet.getRange("D2").getValue();
   if (!currentRow) return;
 
   // 1. Update Last Review Date (E)
@@ -154,7 +257,7 @@ function showExample() {
 
 // 1/21: new function for toggling multiple switches unticked
 function switchOff() {
-  uiSheet.getRangeList(["D14", "D16", "D18", "C12"]).setValue(false); // better than repeating getRange() 3 times
+  uiSheet.getRangeList(["C16", "D16", "D18", "C14"]).setValue(false); // better than repeating getRange() 3 times
 }
 
 // 1/23
@@ -163,19 +266,49 @@ function switchOff() {
  * @param {string} text - The original sentence.
  * @param {number} difficulty - Chance of hiding a word (0.4 = 40%).
  */
+
+/** old */
 // 1. function for the new button "Hint?"
+// function showHint() {
+//   if (!currentRow) return;
+
+//   // 1. Get the original sentence for sentence questions (Column C is 3)
+//   const originalSentence = dataSheet.getRange(currentRow, 3).getValue();
+
+//   // 2. Generate the random hint
+//   const hint = createRandomHint(originalSentence);
+
+//   // 3. Batch Update: Put hint in I2 and turn on the H2 switch
+//   // This triggers the formula in A5 to show the hint instantly
+//   uiSheet.getRange("I2").setValue(hint);
+//   uiSheet.getRange("H2").setValue(true);
+// }
+
+/**new (2/6) */
 function showHint() {
-  const currentRow = uiSheet.getRange("D2").getValue(); // Using D2 as per your formula
+  const currentRow = uiSheet.getRange(cardNumberCell).getValue(); 
   if (!currentRow) return;
 
-  // 1. Get the original sentence for sentence questions (Column C is 3)
-  const originalSentence = dataSheet.getRange(currentRow, 3).getValue();
+  // 1. READ the checkbox value (is it checked or not?)
+  const isWordMode = uiSheet.getRange(wordSentenceTogglRow, wordSentenceTogglCol).getValue();
 
-  // 2. Generate the random hint
-  const hint = createRandomHint(originalSentence);
+  let hint = "";
 
-  // 3. Batch Update: Put hint in I2 and turn on the H2 switch
-  // This triggers the formula in A5 to show the hint instantly
+  // 2. Use the checkbox value (true/false) to decide the logic
+  if (isWordMode === true) { 
+    // WORD MODE: Get Column B (2)
+    const word = dataSheet.getRange(currentRow, COL_de).getValue().toString().trim(); // 3 = Column C
+    hint = word.charAt(0) + "...";
+    // console.log("DEBUG: Word hint is " + hint);
+  } 
+  else {
+    // SENTENCE MODE: Get Column C (3)
+    const originalSentence = dataSheet.getRange(currentRow, COL_de).getValue();
+    hint = createRandomHint(originalSentence);
+    // console.log("DEBUG: Sentence hint generated");
+  }
+
+  // 3. Update the UI
   uiSheet.getRange("I2").setValue(hint);
   uiSheet.getRange("H2").setValue(true);
 }
@@ -184,9 +317,23 @@ function showHint() {
 function createRandomHint(text) {
   if (!text) return "";
   let words = text.split(" ");
-  return words.map(word => (Math.random() < 0.4 && word.length > 2) ? "___" : word).join(" ");
+  return words.map(word => (Math.random() < 0.6 && word.length > 3) ? "___" : word).join(" ");
 }
 
+// daily counter (3/7)
+function resetOnDateChange() {
+  const props = PropertiesService.getScriptProperties();      // [web:20]
+  const lastDate = props.getProperty('last_run_date');        // e.g. "2026-03-07"
+  const today = new Date();
+  const todayKey = Utilities.formatDate(today, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+
+  // Only run reset logic if date changed
+  if (lastDate !== todayKey) {
+     uiSheet.getRange(dailyCounterCell).setValue(0);
+    // Update stored date
+    props.setProperty('last_run_date', todayKey);
+  }
+}
 
 // for Mobile
 /**
@@ -200,7 +347,7 @@ function onEdit(e) {
   const col = range.getColumn();
 
   // A. the switch / toggle
-  if (row == toggleRow && col == toggleCol) {
+  if (row == wordSentenceTogglRow && col == wordSentenceTogglCol) {
     shuffleResult();
     // NOTE: We do NOT put 'range.setValue(false)' here. 
     // This allows the checkbox to stay ticked!
@@ -209,7 +356,6 @@ function onEdit(e) {
 
   // B. Gate Keeper: Only run if the cell was checked (TRUE)
   if (val !== true) return;
-
   // C. The Buttons:
   if (row == 20) {
     if (col == 1) btn_Easy();      // F20: Easy
@@ -218,6 +364,8 @@ function onEdit(e) {
     if (col == 4) btn_Impossible();// F10: Impossible    
     // Auto-uncheck the box so it's ready to be "clicked" again
     range.setValue(false);
+    // currentCount++; edit
+    dailyCountRange.setValue(dailyCount + 1);
     switchOff();
   }
 
@@ -228,14 +376,16 @@ function onEdit(e) {
       range.setValue(false);
       switchOff();
     }
-    if (row == genderSwitchRow) showGender();
+
     // range.setValue(false); // ... maybe not needed?
     if (row == exampleEnSwitchRow) showExample();
     if (row == revealSwitchRow) revealAnswer();
   }
 
+  if (row == genderSwitchRow && col == genderSwitchCol) showGender();
+
   if (row == hintRow && col == hintCol) showHint();
 
   // self debug
-  console.log("SUCCESS: onEdit ran to the end for Row: " + winner.row);
+  // console.log("SUCCESS: onEdit ran to the end for Row: " + winner.row);
 }
