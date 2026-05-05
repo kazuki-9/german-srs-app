@@ -1,5 +1,3 @@
-![App Demo](UI.png)
-![App Demo](data_sheet.png)
 <img width="514" height="726" alt="image" src="https://github.com/user-attachments/assets/d5526a02-2189-4a3e-9a87-f6aa9c86c9fe" />
 <img width="1178" height="632" alt="image" src="https://github.com/user-attachments/assets/ad54b6b9-c5f4-4ec4-95f2-36444522e2ec" />
 
