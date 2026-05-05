@@ -1,7 +1,7 @@
 /** SRS MASTER SCRIPT*/
 
-const DATA_INDEX = 0; // Index 0 (First tab)
-const UI_INDEX = 1; // Index 1 (second tab)
+const UI_INDEX = 0; // Index 1 (second tab)
+const DATA_INDEX = 1; // Index 0 (First tab)
 const DATA_INDEX_2 = 2; // for the 2nd target-language to learn 
 
 const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -323,9 +323,9 @@ function createRandomHint(text) {
 // daily counter (3/7)
 function resetOnDateChange() {
   const props = PropertiesService.getScriptProperties();      // [web:20]
-  const lastDate = props.getProperty('last_run_date');        // e.g. "2026-03-07"
-  const today = new Date();
-  const todayKey = Utilities.formatDate(today, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  const lastDate = props.getProperty('last_run_date');        // Read the last stored run date string, e.g. "2026-03-07"
+  const today = new Date(); // Get the current date and time as a Date object
+  const todayKey = Utilities.formatDate(today, Session.getScriptTimeZone(), 'yyyy-MM-dd'); // Convert today's Date into a yyyy-MM-dd string in the script's time zone
 
   // Only run reset logic if date changed
   if (lastDate !== todayKey) {
